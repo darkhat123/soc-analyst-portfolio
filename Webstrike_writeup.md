@@ -18,16 +18,28 @@ From the first query we can see that there were three results, two inbound conne
 
 Upon examining the files contents we can see the creation of a reverse shell to an external ip on port 8080, likely a persistence mechanism created by an attacker to gain a foothold into the web server 
 
-When checking the ip we can see that its origin is from tianjin, china 
+When checking the ip we can see that its origin is from *tianjin*, china 
 
 https://whatismyipaddress.com/ip/117.11.88.124
 ![image](https://github.com/user-attachments/assets/7ee2891e-494b-4375-8685-fc2ebc4f3af2)
 
 To find the user agent we can follow the tcp or http stream
-The user Agent used is Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0
+The user Agent used is *Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0*
 ![image](https://github.com/user-attachments/assets/c4cc1c85-e37e-4b6b-8532-132c7feeb06b)
 
-To find where the files are uploaded we can follow the tcp or http stream and see that the directory is /reviews/uploads
+The filename *image.jpg.php* of the submitted file can be found following the http stream of the first result
+![image](https://github.com/user-attachments/assets/48c2432a-5f42-4078-8c8e-7951c2547bc6)
 
-The File the attacker was trying to obtain was the passwd file which contains usernames that they can use for futher investigation into the system 
+
+To find where the files are uploaded we can follow the tcp or http stream and see that the directory is /reviews/uploads
+![image](https://github.com/user-attachments/assets/20564e1b-b88c-4a78-933d-7d164ae9d493)
+
+The port is detailed in the reverse shell shown earlier
+
+The File the attacker was trying to obtain was the passwd file which contains usernames that they can use for futher investigation into the system
+![image](https://github.com/user-attachments/assets/4c53b00d-66a8-42a4-b18b-119c502c5d09)
+
+
+This room was a soliud introduction into the investigation of file uploads via HTTP to public facing web servers and demonstrated a common tactic of abusing file extension validation to upload  php webshell which was then used to connect
+back to the attackers ip where the usernames of the system were extracted and further tactics could be performed 
 
