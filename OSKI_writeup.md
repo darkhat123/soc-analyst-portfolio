@@ -50,5 +50,10 @@ This was an interesting lab which required many intelligence platforms to be abl
 Using platforms such as virustotal, AnyRun and Hybrid Analysis we were able to determine the c2 server and the goal of the malware which was to steal credentials from computers
 
 
+# Mitigations
+To prevent situations like this happening the best solution is to provide training and awareness classes on phishing to help employees understand the indicators of phishing so they can identify
+the traits indicative of spam emails, there should also be anti-spoofing controls such as DMARC, DKIM and SPF. Spam blocking and filtering can be applied on the client and server to route suspicous emails to junk or prevent them entering the inbox. In some cases no matter the measures the email reaches the victim, in this case the best defence is to keep the os and software on the machine up to date and run antivirus and EDR on the machine if budget is available. This together creates a layered defense against phishing campagins
 
+# Sources
+https://www.ncsc.gov.uk/guidance/phishing
 
