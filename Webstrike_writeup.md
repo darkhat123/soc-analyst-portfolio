@@ -39,7 +39,10 @@ The port is detailed in the reverse shell shown earlier
 The File the attacker was trying to obtain was the passwd file which contains usernames that they can use for futher investigation into the system
 ![image](https://github.com/user-attachments/assets/4c53b00d-66a8-42a4-b18b-119c502c5d09)
 
-
-This room was a soliud introduction into the investigation of file uploads via HTTP to public facing web servers and demonstrated a common tactic of abusing file extension validation to upload  php webshell which was then used to connect
+# Conclusion
+This room was a solid introduction into the investigation of file uploads via HTTP to public facing web servers and demonstrated a common tactic of abusing file extension validation to upload  php webshell which was then used to connect
 back to the attackers ip where the usernames of the system were extracted and further tactics could be performed 
+
+# Mitigations
+From reading the owasp File Upload Cheat Sheet and reviewing the bypass techniques used by the attacker it is clear that the current file upload page is vulnerable to extension validation bypasses through the use of double extensions, it is reccomended to update the code and use input validation alongside a whitelist of acceptable extensions. It is also recommended to validate the type of file by its MIME Type rather than the Content-Type which can be easily spoofed by the user
 
