@@ -45,7 +45,7 @@ Answer: C:/ProgramData
 
 This is in the command executed in the indicator removal screenshot provided in question 6 where the file would wait 5 seconds before deleting
 
-#Conclusion
+# Conclusion
 This was an interesting lab which required many intelligence platforms to be able to determine the malwares behaviour and the TTPS used by the malware. It required a combination of static and dynamic analysis of the malware, to show a full picture of its capabilities.
 Using platforms such as virustotal, AnyRun and Hybrid Analysis we were able to determine the c2 server and the goal of the malware which was to steal credentials from computers
 
