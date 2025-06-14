@@ -13,7 +13,7 @@ Answer: 4406
 
 ## Question 2 Authentication through SMB was a critical step in gaining access to the targeted system. Identifying the username used for this authentication will help determine if a privileged account was compromised.Which username was utilized for authentication via SMB?
 
-When a user authenticates to an SMB server the process is as follows:
+When a user authenticates to an SMB server, the process is as follows:
 ✅ Step 1: Client Initiates Connection
 The client sends a Negotiate Protocol Request to the server, offering supported SMB protocol versions.
 
@@ -29,10 +29,10 @@ NTLM Authentication
 
 🛠️ NTLM Authentication Steps
 Client → Server:
-Sends a NTLM Negotiate Message.
+Sends an NTLM Negotiate Message.
 
 Server → Client:
-Sends back a NTLM Challenge Message (includes a nonce).
+Sends back an NTLM Challenge Message (includes a nonce).
 
 Client → Server:
 Sends an NTLM Authenticate Message:
@@ -42,7 +42,7 @@ User/domain info.
 Server:
 Verifies the response using its own copy of the password hash (or domain controller).
 
-From this following process we can see that we are looking for the NTLMSPP_AUTH being passed to the server from the client, which passes the username and hash to the SMB server for verification
+From the following process ,we can see that we are looking for the NTLMSPP_AUTH being passed to the server from the client, which passes the username and hash to the SMB server for verification
 
 We can see from the following screenshot that the administrator account was successfully authenticated to 
 ![image](https://github.com/user-attachments/assets/a8d4281e-3c0d-417a-a022-faf71928ec06)
@@ -51,10 +51,10 @@ Answer: Administrator
 
 ## Question 3 During the attack, the adversary accessed certain files. Identifying which files were accessed can reveal the attacker's intent.What is the name of the file that was opened by the attacker?
 To find the packets responsible for accessing files on the smb server we must first understand how a file is accessed in the SMB process, from googling we can see that the initial step is to send a create request to the SMB server which will return a create response
-telling us that the file is accessible or not. Then we have two options for interacting with the file, we can either read the file which involves sending a read request which will be replied to with a read response containing the data in the file. We can also
-write to the file using a write request which will return a write response letting us know if the file has been updated.
+telling us that the file is accessible or not. Then we have two options for interacting with the file: we can either read the file, which involves sending a read request, which will be replied to with a read response containing the data in the file. We can also
+write to the file using a write request, which will return a write response letting us know if the file has been updated.
 
-The filename of the file being accessed is available in many of these packets, we can see it in the header of the Create Request packet.
+The filename of the file being accessed is available in many of these packets; we can see it in the header of the Create Request packet.
 
 ![image](https://github.com/user-attachments/assets/9809485f-ab0d-4921-8ff4-7af1d62eec2a)
 
@@ -62,5 +62,5 @@ Answer: eventlog
 
 ## Question 4 Clearing event logs is a common tactic to hide malicious actions and evade detection. Pinpointing the timestamp of this action is essential for building a timeline of the attacker’s behavior.What is the timestamp of the attempt to clear the event log?
 
-Interacting with the event log uses its own protocol to provide remote administration to the windows event logs on a machine, this can be used to query the events but can also be vulnerable to the logs being cleared if there are no protections in place. We can see that the
+Interacting with the event log uses its protocol to provide remote administration to the Windows event logs on a machine. This can be used to query the events, but can also be vulnerable to the logs being cleared if there are no protections in place. We can see that the
 attacker 
