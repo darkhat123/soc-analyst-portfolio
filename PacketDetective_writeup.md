@@ -62,5 +62,4 @@ Answer: eventlog
 
 ## Question 4 Clearing event logs is a common tactic to hide malicious actions and evade detection. Pinpointing the timestamp of this action is essential for building a timeline of the attacker’s behavior.What is the timestamp of the attempt to clear the event log?
 
-Interacting with the event log uses its protocol to provide remote administration to the Windows event logs on a machine. This can be used to query the events, but can also be vulnerable to the logs being cleared if there are no protections in place. We can see that the
-attacker 
+Interacting with the event log uses the DCERPC protocol to provide remote administration to the Windows event logs on a machine. This can be used to query the events, but can also be vulnerable to the logs being cleared if there are no protections in place. We can see there is indeed DCERPC traffic within the packet capture which appears to be calling a function ClearEventLogW, 
