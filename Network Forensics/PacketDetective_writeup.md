@@ -122,7 +122,9 @@ Here are a few common Named Pipes an attacker may target
 | `\pipe\spoolss`  | Printer Spooler                   | Used for **PrintNightmare**, NTLM coercion                    |
 
 Finding the Named Pipe in wireshark is possible through searching for the PIPE string within any frame, we can do this by entering the hexadecimal representation
-of \PIPE. We can see that we have an entry for 
+of \PIPE. We can see that we have an entry for a procol ISystemActivator which appears to be receving a response RemoteCreateInstance.
+
+To fully understand what this packet represents we can dig deeper into the `
 
 
 
