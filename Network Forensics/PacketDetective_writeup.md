@@ -101,32 +101,70 @@ Named pipes are a powerful inter-process communication (IPC) mechanism, primaril
 
 They are called "named" because, unlike anonymous pipes, they exist as a named object in the file system (e.g., \\.\pipe\mypipe), which makes them accessible to multiple processes.
 
-Many Windows services expose their management interfaces via named pipes:
-
-`\pipe\svcctl` for the Service Control Manager
-
-`\pipe\samr` for account management
-
-`\pipe\lsarpc` for security policy
+Many Windows services expose their management interfaces via named pipes
 
 These can be used by attackers to perform reconaissance, lateral movement, privilege escation and more
-Here are a few common Named Pipes an attacker may target
 
-| Named Pipe       | Interface                         | Functionality Exploited                                       |
-| ---------------- | --------------------------------- | ------------------------------------------------------------- |
-| `\pipe\svcctl`   | **Service Control Manager (SCM)** | Create, start, or delete services — **remote code execution** |
-| `\pipe\samr`     | SAM-R                             | Enumerate users, groups, etc.                                 |
-| `\pipe\lsarpc`   | LSA-RPC                           | Credential retrieval, SID resolution                          |
-| `\pipe\eventlog` | EventLog                          | Clear logs, read logs (Opnum 0, etc.)                         |
-| `\pipe\efsrpc`   | EFSRPC                            | Used in **PetitPotam** to coerce NTLM authentication          |
-| `\pipe\spoolss`  | Printer Spooler                   | Used for **PrintNightmare**, NTLM coercion                    |
 
 Finding the Named Pipe in wireshark is possible through searching for the PIPE string within any frame, we can do this by entering the hexadecimal representation
 of \PIPE. We can see that we have an entry for a procol ISystemActivator which appears to be receving a response RemoteCreateInstance.
 
-To fully understand what this packet represents we can dig deeper into the `
+To fully understand what this packet represents we can dig deeper into the way windows performs instrucitons sent from one machine on another machine.
+When one object on a computer needs to be accessed remotely by another computer windows uses the DCOM protocol.
 
+DCOM (Distributed Component Object Model)
+What it is:
+A Microsoft extension of COM (Component Object Model) that supports remote communication between software components over a network using DCERPC.
 
+Primary uses:
+Allows applications to call COM objects on remote machines
+Used heavily by Windows management services (e.g., WMI—Windows Management Instrumentation)
 
+Ports:
+Uses DCERPC for communication
+Starts on TCP 135 (RPC endpoint mapper) and then uses dynamic ports (1024-65535, or configurable)
+
+The interplay between SMB, DCERPC and DCOM is evident in our packet as we have the use of named pipes which are used in SMB to allow interprocess communication,
+the named pipe is used by DCERPC to send function calls to the pipe which will be used to determine the behaviour of the target process using the pipe.
+DCOM is used to provide object methods from one machine to the other, we can see that a DCOM object ISystemActivatior has returned a RemoteCreateInstance repsonse. This means that the COM object and its methods are now available to the attacker, understanding what named pipe was targeted is useful in determining
+what the attacker was trying to do on the remote machine. Scrolling through the packet data for the suspicious packet we can see the \PIPE entry in the packet, reading round the string gives us context to what server the attacker was targeting and the named pipe, this is provided in the NetworkAddr section. This can
+be hard to filter for as it can be avaiable in other sections of the DCERPC packet, thus the reason for filtering for occurences of \PIPE within frames being
+the best way to identify the traffic
+
+![image](https://github.com/user-attachments/assets/3eba2756-68a7-403f-97c1-177e8d9549b2)
+
+The atsvc Named Pipe is related to the task scheduler program, the attacker is likely trying to perform commands to access another computer using the task scheduler to manipulate scheduled tasks to run arbitrary commands typically with SYSTEM privileges. Due to no interactive shell being spwaned this isnt noisy
+and can go unnoticed as the attacker performs their attack.
+
+Answer:atsvc
+
+## Question 6 Measuring the duration of suspicious communication can reveal how long the attacker maintained unauthorized access, providing insights into the scope and persistence of the attack.What was the duration of communication between the identified addresses 172.16.66.1 and 172.16.66.36?
+Manually determining how long two computers were communicating can be arduous, luckily wireshark provides a built in feature known as conversations which collects
+information on the traffic between two computers as a whole, this can be accessed in **Statistics>Conversations**, with both ips filtered for it should only
+display info on the addresses present with the filter applied.
+
+Answer: 11.7247
+
+## Question 7 The attacker used a non-standard username to set up requests, indicating an attempt to maintain covert access. Identifying this username is essential for understanding how persistence was established.Which username was used to set up these potentially suspicious requests?
+When looking for Samba traffic it should be known that different versions are available, typically the version is determined by choosing the highest available for both parties, when using our filter from Q2 we cant see any entries trying to authenticate to any SMB servers, when we change the version to samba 2 we get a hit
+Command `smb2 and ntlmssp.auth.username`
+![image](https://github.com/user-attachments/assets/2d2f737e-d80a-40a7-861b-99550465a4fd)
+
+Answer:backdoor
+
+## Question 8 The attacker leveraged a specific executable file to execute processes remotely on the compromised system. Recognizing this file name can assist in pinpointing the tools used in the attack.What is the name of the executable file utilized to execute processes remotely?
+When determining what file was used we can do two things, we can observe the SMB objects exported from wireshark where it is clearly listed
+![image](https://github.com/user-attachments/assets/c3157ff6-78ba-4201-b107-434cef060dd1)
+
+Furthermore if we know the extension of the file we can use the SMB filename field to indentify any entries containing the extension
+
+`smb2.filename contains ".exe"`
+
+![image](https://github.com/user-attachments/assets/d93ee8c0-6d71-4469-8ea3-e8e1eba315a3)
+
+Answer psexesvc.exe
+
+# Conclusion
+This was an interesting network forensics challenge where we gained insight into how to reconstruct an attack over SMB where multiple endpoints were affected, this involved analysing the underlying protocols being used to perform remote administration on computers to determine what the attacker did. We learned about the interplay between SMB, DCERPC and DCOM and their roles in a windows environment, we also constructed filters which can quickly identify traffic.
 
 
