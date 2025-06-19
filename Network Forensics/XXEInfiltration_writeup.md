@@ -27,3 +27,29 @@ for processing. This requires the POST request to be used to submit the data.
 Answer: /review/upload.php
 
 ## Question 3 To construct the attack timeline and determine the initial point of compromise. What's the name of the first malicious XML file uploaded by the attacker?
+When trying to determine what files were sent to the vulnerable php page we are looking for any POST requests containing the .xml extension in their Content-Disposition section. This contains a field known as filename which is used to specify the name of file being submitted. 
+
+![image](https://github.com/user-attachments/assets/181850d5-155d-43b3-98a9-9d420bf00b14)
+
+We can see that multiple XML files have been submitted to the server , the first timestamp shows us what file the attacker submitted.
+
+Answer: TheGreatGatsby.xml
+
+## Question 4 Understanding which sensitive files were accessed helps evaluate the breach's potential impact. What's the name of the web app configuration file the attacker read?
+
+With knowledge of the requests sent by the attacker this is as simple as navigating through each request and determining what files were accessed by the attacker
+THe files requested were either index pages, the passwd file on the system or what appears to be a booking page. The only one related to configuration seems to be config.php
+![image](https://github.com/user-attachments/assets/bf6ca45a-2349-4451-8dbb-c79770ca9d28)
+
+Answer:config.php
+
+## Question 5 To assess the scope of the breach, what is the password for the compromised database user?
+Following the http stream of the request for the configuration file request we can see that the reply contains the configuration files contents which seems to be connecting to an sql database. The hardcoded credentials in the file are a mistake made by the creators and should not be stored in plaintext within the file.
+
+![image](https://github.com/user-attachments/assets/5c9a5be0-496b-4b43-bed9-c02f5f2c67cb)
+
+Answer: Winter2024
+
+## Question 6 Following the database user compromise. What is the timestamp of the attacker's initial connection to the MySQL server using the compromised credentials after the exposure?
+
+
