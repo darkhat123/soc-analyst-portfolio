@@ -51,5 +51,37 @@ Following the http stream of the request for the configuration file request we c
 Answer: Winter2024
 
 ## Question 6 Following the database user compromise. What is the timestamp of the attacker's initial connection to the MySQL server using the compromised credentials after the exposure?
+Now we know the attacker has access to database credentials we must begin looking for evidence of the attacker connecting to the database. From the config files contents we can see the attacker will be using mysql to connect to the database, we can filter for packets specific to mysql. Finally we know that when a user attempts to login to a mysql database it sends a Login Request Packet with the username and password and awaits a reply saying their authentication was successful.
 
+We know that the attacker retrieved the credentials in packet 88338 so we can assume that the packetsa following this will be the ones who utilise the stolen credentials.
 
+We can see that the initial attempt in packet 88348 was made.
+![image](https://github.com/user-attachments/assets/8dce0663-74dc-4553-9ad1-bc9cae914e2e)
+
+Answer: 2024-05-31 12:08
+
+## Question 7 To eliminate the threat and prevent further unauthorized access, can you identify the name of the web shell that the attacker uploaded for remote code execution and persistence?
+
+Typically when an application is written in php it is likely that the reverse shell will involve using a php file to connect to the reverse shell and to execute commands remotely. We can see from the PrideandPrejudice.xml upload that the attacker has created two external entities, one used as a variable to assign the URL that will be requested and another to define the function that will be used to make the request. Within the booking.php file being requested will be code to eastablish the reverse shell, maintain persistence and perform remote code execution on the vulnerable system. This will likely bypass firealls since the request is made from an internal server over HTTP/HTTP's which is likely permitted in an enterprise environment. The function used to request the URL is the `php://filter`
+wrapper which is an Input/Output stream manipulation wrapper. This allows us to perform operations such as Base64 Encoding/Decoding or encryption to bypass. This is done with `/read=convert.base64-encode`. Finally we specify the resource that we would like to perform I/O manipulation using `/resource=%payload` which in our case will request the remote file containing the web shell for maintaining persitence and executing commands.
+
+![image](https://github.com/user-attachments/assets/ff7d1816-d553-4d16-b68c-c0cf8fb38a31)
+
+Answer: booking.php
+
+# Conclusion
+This lab demostrates the need for Web application security measures both in the development of web applications and in the maintenance thereafter. From a simple port scan on a public facing web site an attacker was able to identify vulnerable functionality within the applications file upload process which allowed submission
+of files without validation of the files contents. This resulted in the attacker being able to submit arbitrary requests to sensitive files on the webservers filesystem which lead to the disclosure of user credentials to application critical databases where further enumeration could take place. Finally the attacker was able to abuse the file upload to create an XXE Injection which utlised external entities to craft a payload capable of calling home to the attackers malicious php file where a webshell and remote execution code resides. Resulting in persitence for the attacker and likely helped their laterla movement. 
+
+This highlights the need to:
+
+1. Whitelist file types: Only allow specific, known-safe MIME types and file extensions (e.g., .jpg, .png).
+2. Content inspection: Validate the actual content (magic bytes) of uploaded files—not just extensions.
+3. Sanitize file names: Strip or randomize filenames to prevent path traversal or overwrites.
+4. Store uploads outside web root: Avoid direct web access to uploaded files.
+5. Use a secure intermediary: Store files in blob storage (e.g., S3) with proper access policies.
+6. Scan files: Use antivirus/malware scanners on uploaded content.
+7. Disable DTDs and external entities in XML parsers: `parser = defusedxml.ElementTree.parse()  # Python example using a safe library`
+8. Use safe libraries (e.g., defusedxml, or equivalent in other languages).
+9. Validate input: Sanitize and validate all user-supplied XML data.
+10. Use JSON instead of XML where possible.
