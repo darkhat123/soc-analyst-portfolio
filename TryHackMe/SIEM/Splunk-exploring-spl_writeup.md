@@ -50,4 +50,27 @@ As shown in the tutorial a key feature of splunk is its ability to chain filters
 
 Answer: 4
 
-## Question 6 
+## Question 6 How many events are observed with Destination IP 172.18.39.6 AND destination Port 135?
+![image](https://github.com/user-attachments/assets/ee556fbd-71b3-45e2-9033-969cb5cbf4ae)
+
+Answer: 4
+
+## Question 7 What is the Source IP with highest count returned with this Search query?
+Search Query: index=windowslogs  Hostname="Salena.Adam" DestinationIp="172.18.38.5"
+![image](https://github.com/user-attachments/assets/95e06f45-2a25-4379-9f77-6fee9ee6ab27)
+Answer: 172.90.12.11
+
+## Question 8 In the index windowslogs, search for all the events that contain the term cyber how many events returned?
+![image](https://github.com/user-attachments/assets/fe606ea9-6172-442b-a23a-cac127fe34e5)
+
+This searches for the occurence of the word cyber wihtout any leading or trailing characters
+
+Answer: 0
+
+## Question 9 Now search for the term cyber*, how many events are returned?
+We can also look for occurences where a word starts with cyber 
+![image](https://github.com/user-attachments/assets/55ee6534-30b5-4c57-802f-89debbe3ebb5)
+
+Answer: 12256
+
+## Question 10 
