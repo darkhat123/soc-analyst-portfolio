@@ -48,3 +48,41 @@ Any activity related to the starting and stopping of VM's is located within the 
 <img width="1912" height="919" alt="image" src="https://github.com/user-attachments/assets/428f13a9-1ef9-4dbd-9f5e-f012039951b7" />
 
 Answer: DEV01VM
+
+## Qustion 8 To assess the potential data exposure, what is the name of the database exported?
+Finding which databases were accessed involves looking for logs with requests made to any databases in the traffic capture, to find these we can filter for `azure.activitylogs.identity.authorization.action.keyword: Microsoft.Sql/servers/databases/export/action` which shows any requests related to the reading and saving of database files on the cloud, this returns 2 results, adding the source ip, the user who initatied the request, their ip and the resource name we can see that the IT Admin account was used to access the database file
+
+<img width="1903" height="917" alt="image" src="https://github.com/user-attachments/assets/7ddcd0b9-b946-42f5-a080-846783420720" />
+
+Answer: CUSTOMERDATADB
+
+## Question 9 In your pursuit of uncovering persistence techniques, what is the display name associated with the user account you have discovered?
+Returning to the logs related to signins for users we know of the two previous users who were compromised, we can filter for traffic originating from germany and then add some additional columns related to the activity logs and the signin logs. We can find the user display name column and add this to our results.
+<img width="1916" height="912" alt="image" src="https://github.com/user-attachments/assets/07780f93-c057-49c2-9eb5-4629d473f7ad" />
+
+Answer: IT Support
+
+## Question 10 The attacker utilized a compromised account to assign a new role. What role was granted?
+When we are looking for new role assignments they can be filtered using `azure.activitylogs.operation_name.keyword: MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/WRITE`, this will show all traffic related to the assignment of roles in the cloud. We can now add columns such as the level of the role assigned, the user who assigned the role and the extent of where this role is impacted, we can see that the owner role wass assgined and was appliued across the whole subscription service, meaning the user has complete control over the administrative functionalities available on the cloud environment
+
+<img width="1917" height="917" alt="image" src="https://github.com/user-attachments/assets/9f986b39-d344-4a79-8e99-c0e9e07375a7" />
+
+Answer: Owner
+
+## Question 11 For a comprehensive timeline and understanding of the breach progression, What is the timestamp of the first successful login recorded for this user account?
+Now that we know the IT Support user was assigned full administrative control it is likely the attacker moved laterally to this account to continue their attack, finding out the earliest login for the IT Support account is as simple as searching "IT Support", this will return 3 results related to the signin of the account, if we order by timestamp we see the earliest request
+<img width="1903" height="908" alt="image" src="https://github.com/user-attachments/assets/75d35157-7cc7-4c80-b3b0-d156255ed25f" />
+
+Answer: 2023-10-06 07:30
+
+# Conclusion
+This lab gives hands on experience in analysing an attackers movements and establishin an attack chain alognside the scope of the impact the attack can have on the infrastructure, this lab was based on the Cloud Provider AWS, this allows entire enterprise networks to be ran from the cloud. With this comes alot of power in the hands of an attacker if they can compromise any part of the cloud infrastructure the impact could be devastating.
+Access to the initial account did not seem to be bruteforced in any way indicating the credentails of that user had become leaked either via phishing or data breaches. Fromn this initial account the attacker had the ability to enumerate sensitive data such as blob storage files which could contain further information for the attacker to continue his attack, perhaps credentials were obtained from the script accessed by the attacker and were used to access the second account which allowed the attacker to start a VM which could possibly be accessed and enumerated, the attacker also assigned a new role to an existing user account which was then accessed giving full administrative access to the subscription service.
+
+# Mitigations
+- Strong Password Policy
+- Rotate Credentials and Access Keys regularly
+- Multi Factor Authentication
+- Restrict bucket access using IAM and Bucket policies
+- Scan Stored files and scripts for credentials and remove
+
