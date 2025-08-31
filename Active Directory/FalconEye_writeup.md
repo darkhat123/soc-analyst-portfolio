@@ -244,6 +244,39 @@ Finding the service being abused to access client03 is as simple as looking for 
 `index="folks" host="CLIENT02" CommandLine="*CLIENT03*" 
 |  table CommandLine`
 
+Command ran: `"C:\Users\HelpDesk\Microsoft-Update.exe" s4u /user:Client02$ /aes256:0a87dfe150dc1da194b965a620e2acd94aea917185c7bb6731aa323470f357d9 /msdsspn:http/Client03 /impersonateuser:Administrator /ptt`
+
+### Who does it authenticate?
+
+- Initial authentication →
+
+The AES256 key is used to prove the identity of Client02$ to the Key Distribution Center (KDC / Domain Controller).
+
+This allows the attacker to request special Kerberos tickets on behalf of Client02$.
+
+- S4U2Self + S4U2Proxy (impersonation) →
+
+Once authenticated as Client02$, the attacker abuses the Service-for-User (S4U) extension.
+
+They request a service ticket for http/Client03, but impersonating Administrator (/impersonateuser:Administrator).
+
+- Final result →
+
+The DC issues a valid service ticket for Administrator to the SPN http/Client03, even though the attacker never had Administrator’s password.
+
+/ptt loads that ticket into memory → attacker can log in as Administrator to the HTTP service on Client03.
+
 Screenshot: <img width="1901" height="835" alt="image" src="https://github.com/user-attachments/assets/ba5878ad-c001-4a40-a61a-db9def99a560" />
 
 Answer: http/client03
+## Question 11: The Client03 machine spawned a new process when the attacker logged on remotely. What is the process name?
+
+There are many windows processes used for executing command remotely, we can check through each of these in the CommandLine or Image fields to find cases where they are used by known compromised accounts 
+`index=folks Computer="Client03.Abdullah.Ali.Alhakami" host=CLIENT03 (CommandLine="*wsmprovhost.exe*" OR ParentCommandLine="*wsmprovhost.exe*")
+|  table ParentCommandLine ParentImage CommandLine Image`
+
+Screenshot: <img width="1903" height="846" alt="image" src="https://github.com/user-attachments/assets/583c028c-4232-4f13-831b-4b6e6a3d29d8" />
+
+Answer: wsmprovhost.exe
+
+## Question 12: The attacker compromises the it-support account. What was the logon type?
