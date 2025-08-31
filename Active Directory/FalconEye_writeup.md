@@ -6,11 +6,17 @@ Once the attacker had elevated access, the attacker launched a DCsync attack to 
 Throughout the investigation, tracking the attacker's activities and creating a comprehensive timeline is crucial. This will provide valuable insights into the attack and aid in identifying potential gaps in the network's security.
 
 
-| Technique                                                     | Tactic                            | Technique ID  |
-| ------------------------------------------------------------- | --------------------------------- | ------------- |
-| **Hijack Execution Flow: Path Interception by Unquoted Path** | Privilege Escalation, Persistence | **T1574.009** |
-| **OS Credential Dumping: DCSync**                             | Credential Access                 | **T1003.006** |
-| **Pass-the-Hash (PtH) for Lateral Movement**                  | Lateral Movement                  | **T1550.002** |
+| Technique                                                           | Tactic                             | Technique ID              |
+| ------------------------------------------------------------------- | ---------------------------------- | ------------------------- |
+| **Hijack Execution Flow: Path Interception by Unquoted Path**       | Privilege Escalation, Persistence  | **T1574.009**             |
+| **OS Credential Dumping: DCSync**                                   | Credential Access                  | **T1003.006**             |
+| **Pass-the-Hash (PtH) for Lateral Movement**                        | Lateral Movement                   | **T1550.002**             |
+| **Command-Line Interface (PowerShell / bloodhound.exe)**            | Discovery                          | **T1059.001**             |
+| **LSASS Memory Dump (fun.exe / mimikatz)**                          | Credential Access                  | **T1003** (LSASS)         |
+| **Over-Pass-the-Hash / Kerberos Ticket Theft**                      | Credential Access                  | **T1558.003**             |
+| **Service Execution via SC Create / Automate-Basic-Monitoring.exe** | Persistence / Privilege Escalation | **T1543.003 / T1574.009** |
+| **File Creation (fun.exe, dropped by PowerShell)**                  | Defense Evasion / Execution        | **T1105 / T1059.001**     |
+
 
 
 ## Question 1 What is the name of the compromised account?
@@ -214,4 +220,30 @@ This finds event id 4768 which is triggered every time a Kerberos Authentication
 
 Screenshot: <img width="1890" height="374" alt="image" src="https://github.com/user-attachments/assets/615df80c-25a3-4163-856c-b8f262b45f1d" />
 
-Answer: mohammed
+With the user available we can now look for any process creations ran by Mohammed and we can find the command used to gain an interactive shell by the attacker, we can also omit the Mohammed query and see all authentication attempts performed by the Helpdesk User
+
+Final Query: `index="folks" CommandLine="*aes256*" Mohammed EventID=1 
+| table _time, Computer, User, CommandLine`
+Screenshot: <img width="1910" height="916" alt="image" src="https://github.com/user-attachments/assets/ef8e17c2-29e7-408b-9dc0-2868b65356ec" />
+
+
+Final query: `index="folks" CommandLine="*aes256*" EventID=1 
+| table _time, Computer, User, CommandLine`
+Screenshot: <img width="1893" height="726" alt="image" src="https://github.com/user-attachments/assets/d2644cec-9a57-4baa-9b9b-785c777d340c" />
+
+Command Ran `"C:\Users\HelpDesk\Microsoft-Update.exe" asktgt /user:Mohammed /aes256:facca59ab6497980cbb1f8e61c446bdbd8645166edd83dac0da2037ce954d379 /opsec /createnetonly:C:\Windows\System32\cmd.exe /show /ptt`
+
+This gives us access to the command prompt for the user Mohammed
+
+Answer:facca59ab6497980cbb1f8e61c446bdbd8645166edd83dac0da2037ce954d379
+
+## Question 10: What service did the attacker abuse to access the Client03 machine as Administrator?
+
+Finding the service being abused to access client03 is as simple as looking for any access to CLIENT03 from CLIENT02 in the command line arguments where the attacker likely authenticated from
+
+`index="folks" host="CLIENT02" CommandLine="*CLIENT03*" 
+|  table CommandLine`
+
+Screenshot: <img width="1901" height="835" alt="image" src="https://github.com/user-attachments/assets/ba5878ad-c001-4a40-a61a-db9def99a560" />
+
+Answer: http/client03
