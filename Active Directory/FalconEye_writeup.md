@@ -268,7 +268,7 @@ In AD, Client02 (a computer account) is trusted for constrained delegation to ht
 
 - Attacker uses S4U2proxy: “Now, as Client02, give me a service ticket for Administrator to http/Client03.”
 
-- KDC checks AD and says: ✅ allowed, because Client02 is trusted to delegate to http/Client03.
+- KDC checks AD and says:  allowed, because Client02 is trusted to delegate to http/Client03.
 
 - Now the attacker has a Kerberos service ticket to Client03 — as Administrator.
 
@@ -381,14 +381,14 @@ Command Run: `"C:\Users\HelpDesk\Better-to-trust.exe" "kerberos::golden /user:Ad
 
 Answer: trust-test2.kirbi
 
-## 📌 Conclusion
+##  Conclusion
 
 This investigation reconstructed the attacker’s activities across the Abdullah.Ali.Alhakami Active Directory forest, revealing their tactics, techniques, and procedures (TTPs).  
 The intrusion path leveraged service misconfigurations, credential dumping, Kerberos abuse, and lateral movement techniques to escalate from a workstation compromise (`Client02`) to full domain dominance, including the parent domain controller.
 
 The timeline demonstrates how chained privilege escalation, credential access, and delegation abuse enabled persistent, stealthy access.
 
-## 🔒 Recommendations for Prevention & Detection
+##  Recommendations for Prevention & Detection
 
 ### 1. Active Directory Hardening
 - Remove **unnecessary replication rights** (e.g., prevent HelpDesk accounts from holding `Replicating Directory Changes` permissions).
@@ -428,7 +428,7 @@ The timeline demonstrates how chained privilege escalation, credential access, a
 
 ---
 
-✅ **In summary:**  
+**In summary:**  
 The compromise highlights how misconfigurations in Active Directory and lack of monitoring enable attackers to pivot from a single endpoint compromise to total domain takeover. Proactive hardening, continuous monitoring, and enforcing least privilege are critical to preventing such breaches in the future.
 
 
