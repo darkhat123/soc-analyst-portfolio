@@ -246,25 +246,52 @@ Finding the service being abused to access client03 is as simple as looking for 
 
 Command ran: `"C:\Users\HelpDesk\Microsoft-Update.exe" s4u /user:Client02$ /aes256:0a87dfe150dc1da194b965a620e2acd94aea917185c7bb6731aa323470f357d9 /msdsspn:http/Client03 /impersonateuser:Administrator /ptt`
 
-### Who does it authenticate?
+This is a classic abuse of Delegation using s4u2self and s4u2proxy where the attacker impersonates a user when connecting to a service to acess a shell with the privileges of the impersonated user
+**Setup / Precondition**
 
-- Initial authentication →
+In AD, Client02 (a computer account) is trusted for constrained delegation to http/Client03.That means the KDC will allow Client02 to impersonate any user (including Administrator) to the HTTP service on Client03.
 
-The AES256 key is used to prove the identity of Client02$ to the Key Distribution Center (KDC / Domain Controller).
+**Attacker Control**
 
-This allows the attacker to request special Kerberos tickets on behalf of Client02$.
+- Attacker compromises Client02 (local SYSTEM or computer account hash).
 
-- S4U2Self + S4U2Proxy (impersonation) →
+- They extract the AES256 Kerberos key (or RC4/NTLM hash) for Client02 from LSASS or AD.
 
-Once authenticated as Client02$, the attacker abuses the Service-for-User (S4U) extension.
+**S4U Abuse**
 
-They request a service ticket for http/Client03, but impersonating Administrator (/impersonateuser:Administrator).
+- Attacker uses S4U2self: “As Client02, give me a Kerberos ticket for Administrator (to myself).”
 
-- Final result →
+- This gives them a service ticket that proves “Administrator authenticated to me.”
 
-The DC issues a valid service ticket for Administrator to the SPN http/Client03, even though the attacker never had Administrator’s password.
+- Attacker uses S4U2proxy: “Now, as Client02, give me a service ticket for Administrator to http/Client03.”
 
-/ptt loads that ticket into memory → attacker can log in as Administrator to the HTTP service on Client03.
+- KDC checks AD and says: ✅ allowed, because Client02 is trusted to delegate to http/Client03.
+
+- Now the attacker has a Kerberos service ticket to Client03 — as Administrator.
+
+**Pass-the-Ticket (PTT)**
+
+- Attacker injects this forged/abused ticket into their current session (klist, mimikatz, Rubeus).
+
+- They connect to Client03’s HTTP service (or other enabled services).
+
+- If Administrator has local admin on Client03, they can spawn a shell as Administrator.
+
+**Why This Works**
+
+- Constrained Delegation (KCD) still trusts the front-end service (Client02) to request tickets on behalf of any user — even privileged ones like Administrator.
+
+- By stealing the computer account key of Client02, the attacker becomes the delegating service.
+
+- Kerberos won’t distinguish between “real” delegation and “abused” delegation — if the key is valid, the KDC complies.
+
+**Security Implications**
+
+This is essentially Privilege Escalation + Lateral Movement:
+
+- Escalation: Attacker elevates from “just Client02 SYSTEM” to Administrator on Client03.
+
+- Lateral: Moves across the network without needing user passwords.
 
 Screenshot: <img width="1901" height="835" alt="image" src="https://github.com/user-attachments/assets/ba5878ad-c001-4a40-a61a-db9def99a560" />
 
@@ -280,3 +307,75 @@ Screenshot: <img width="1903" height="846" alt="image" src="https://github.com/u
 Answer: wsmprovhost.exe
 
 ## Question 12: The attacker compromises the it-support account. What was the logon type?
+We know the attacker used the overpass-the-hash technique to compromise previous accounts and we know RunAs uses LogonType 9
+
+Answer: 9
+
+## Question 13 What ticket name did the attacker generate to access the parent DC as Administrator?
+Currently all of the tactics and techniques employed by the attacker have focused on targeting accounts, services and computers to perform lateral movement around the Abdullah.Ali.Alhakami domain which is a child domain
+of Ali.Alhakami the root of the forest. We know the attacker is trying to access the Parent Domain from the child domain and therefore must try to escalate their privileges by abusing Kerberos. A common privilege escalation attack vector used to gain access to an entire domain by abusing kerberos is the Golden Ticket Attack. 
+
+### Steps of a Golden Ticket Attack
+**Compromise a Domain Controller**
+
+- The attacker first needs Domain Controller–level access (or any system where the krbtgt account hash can be obtained).
+
+- They usually dump credentials from LSASS or the NTDS.dit Active Directory database.
+
+**Steal the krbtgt Account Key**
+
+- The krbtgt account stores the encryption keys used to sign and encrypt all Kerberos Ticket Granting Tickets (TGTs).
+
+- The attacker extracts the NTLM/AES key of krbtgt.
+
+- This is the crown jewel — with it, they can forge tickets.
+
+**Forge a TGT (“Golden Ticket”)**
+
+- Using the stolen key, the attacker generates a fake TGT.
+
+- They can set:
+
+  - User account name (even a nonexistent account).
+
+  - Domain SID.
+
+  - Group memberships (Domain Admins, Enterprise Admins, etc.).
+
+  - Ticket lifetime (can be arbitrarily long — even 10 years).
+
+**Inject and Use the Ticket**
+
+- The forged ticket is injected into memory on a compromised machine.
+
+- From there, the attacker can present it to any domain service (SMB, RDP, LDAP, SQL, etc.).
+
+- Since the TGT is signed by the krbtgt key, all DCs in the domain trust it.
+
+**Persistence and Lateral Movement**
+
+Because the attacker controls the trust root (krbtgt), they can:
+
+- Impersonate any account.
+
+- Maintain access indefinitely, even if admin passwords are reset.
+
+- Move laterally across the domain and trusted forests.
+
+
+We know the attacker has used Mimikatz previously which is know for having a module dedicated to creating golden tickets given the attacker obtained the keys from LSASS, we can search for command line arguments synonymous with the golden ticket attack in mimikatz.
+
+`index="folks" host=CLIENT02 (CommandLine="*kerberos::golden*" OR CommandLine="*ticket*" AND CommandLine="*Administrator*")
+| table _time CommandLine`
+
+This looks for the signature module from mimikatz but falls back to finding any commands that include strings ticket and Administrator
+
+Screenshot: <img width="1912" height="927" alt="image" src="https://github.com/user-attachments/assets/9c76a4e7-e278-417b-bdfe-b24633aaff8f" />
+
+We can see three attempts to perform the golden ticket attack to access the parent domain one that uses the AES256 key and then the other which goes to the less secure RC4 key
+
+Command Run: `"C:\Users\HelpDesk\Better-to-trust.exe" "kerberos::golden /user:Administrator /domain:Abdullah.Ali.Alhakami /sid:S-1-5-21-1316629931-576095952-2750207263 /sids:S-1-5-21-2314577697-1335098093-3289815499-519 /rc4:8a1a8ab21f32a13a8d83254d33448424 service:krbtgt /target:Ali.Alhakami /ticket:trust-test2.kirbi"`
+
+Answer: trust-test2.kirbi
+
+
