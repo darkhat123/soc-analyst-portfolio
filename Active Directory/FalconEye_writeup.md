@@ -5,17 +5,20 @@ Once the attacker had elevated access, the attacker launched a DCsync attack to 
 
 Throughout the investigation, tracking the attacker's activities and creating a comprehensive timeline is crucial. This will provide valuable insights into the attack and aid in identifying potential gaps in the network's security.
 
+| Technique                                                           | Tactic                             | Technique ID              | Evidence in Investigation                                                                 |
+| ------------------------------------------------------------------- | ---------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------- |
+| **Hijack Execution Flow: Path Interception by Unquoted Path**       | Privilege Escalation, Persistence  | **T1574.009**             | Service `Automate-Basic-Monitoring.exe` exploited due to unquoted service path            |
+| **OS Credential Dumping: DCSync**                                   | Credential Access                  | **T1003.006**             | `fun.exe` (Mimikatz) executed with `lsadump::dcsync /user:Abdullah-work\Administrator`    |
+| **Pass-the-Hash (PtH) for Lateral Movement**                        | Lateral Movement                   | **T1550.002**             | Compromised `Abdullah-work\HelpDesk` via NTLM logons (4624, LogonType 3/9/10)             |
+| **Command-Line Interface (PowerShell / bloodhound.exe)**            | Discovery                          | **T1059.001**             | PowerShell execution of `bloodhound.exe` on `Client02`                                    |
+| **LSASS Memory Dump (fun.exe / mimikatz)**                          | Credential Access                  | **T1003**                 | `fun.exe` = `mimikatz.exe` dropped via PowerShell, dumped credentials from LSASS          |
+| **Over-Pass-the-Hash / Kerberos Ticket Theft**                      | Credential Access                  | **T1558.003**             | Rubeus-like `asktgt /aes256` executed for user `Mohammed` with AES256 key injection       |
+| **Service Execution via SC Create / Automate-Basic-Monitoring.exe** | Persistence / Privilege Escalation | **T1543.003 / T1574.009** | New vulnerable service created and abused to escalate privileges                          |
+| **File Creation (fun.exe, dropped by PowerShell)**                  | Defense Evasion / Execution        | **T1105 / T1059.001**     | Sysmon Event ID 11 shows download of `fun.exe` at 2023-05-10 05:08                        |
+| **Kerberos Delegation Abuse (S4U2self/S4U2proxy)**                  | Lateral Movement                   | **T1550.003**             | `Microsoft-Update.exe` command abused `http/client03` service delegation for Admin access |
+| **Remote Services (WinRM / WSMProvHost)**                           | Lateral Movement                   | **T1021.006**             | On `Client03`, attacker spawned `wsmprovhost.exe` for remote PowerShell session           |
+| **Golden Ticket (Kerberos Ticket Forgery)**                         | Persistence / Privilege Escalation | **T1558.001**             | Forged ticket `trust-test2.kirbi` using Mimikatz `kerberos::golden` targeting parent DC   |
 
-| Technique                                                           | Tactic                             | Technique ID              |
-| ------------------------------------------------------------------- | ---------------------------------- | ------------------------- |
-| **Hijack Execution Flow: Path Interception by Unquoted Path**       | Privilege Escalation, Persistence  | **T1574.009**             |
-| **OS Credential Dumping: DCSync**                                   | Credential Access                  | **T1003.006**             |
-| **Pass-the-Hash (PtH) for Lateral Movement**                        | Lateral Movement                   | **T1550.002**             |
-| **Command-Line Interface (PowerShell / bloodhound.exe)**            | Discovery                          | **T1059.001**             |
-| **LSASS Memory Dump (fun.exe / mimikatz)**                          | Credential Access                  | **T1003** (LSASS)         |
-| **Over-Pass-the-Hash / Kerberos Ticket Theft**                      | Credential Access                  | **T1558.003**             |
-| **Service Execution via SC Create / Automate-Basic-Monitoring.exe** | Persistence / Privilege Escalation | **T1543.003 / T1574.009** |
-| **File Creation (fun.exe, dropped by PowerShell)**                  | Defense Evasion / Execution        | **T1105 / T1059.001**     |
 
 
 
@@ -377,5 +380,56 @@ We can see three attempts to perform the golden ticket attack to access the pare
 Command Run: `"C:\Users\HelpDesk\Better-to-trust.exe" "kerberos::golden /user:Administrator /domain:Abdullah.Ali.Alhakami /sid:S-1-5-21-1316629931-576095952-2750207263 /sids:S-1-5-21-2314577697-1335098093-3289815499-519 /rc4:8a1a8ab21f32a13a8d83254d33448424 service:krbtgt /target:Ali.Alhakami /ticket:trust-test2.kirbi"`
 
 Answer: trust-test2.kirbi
+
+## 📌 Conclusion
+
+This investigation reconstructed the attacker’s activities across the Abdullah.Ali.Alhakami Active Directory forest, revealing their tactics, techniques, and procedures (TTPs).  
+The intrusion path leveraged service misconfigurations, credential dumping, Kerberos abuse, and lateral movement techniques to escalate from a workstation compromise (`Client02`) to full domain dominance, including the parent domain controller.
+
+The timeline demonstrates how chained privilege escalation, credential access, and delegation abuse enabled persistent, stealthy access.
+
+## 🔒 Recommendations for Prevention & Detection
+
+### 1. Active Directory Hardening
+- Remove **unnecessary replication rights** (e.g., prevent HelpDesk accounts from holding `Replicating Directory Changes` permissions).
+- Regularly audit **domain and enterprise admin group memberships**.
+- Enforce **strong AES encryption (AES256)** for Kerberos tickets and disable RC4/NTLM fallback where possible.
+- Monitor **delegation settings** in AD; restrict constrained delegation only where absolutely required.
+
+### 2. Credential Protection
+- Enable **LSASS protection (RunAsPPL)** to prevent direct memory dumping by tools like Mimikatz.
+- Deploy **Credential Guard** (Windows 10+) to block hash and ticket theft.
+- Rotate **krbtgt account passwords twice** after compromise, ensuring forged Golden Tickets are invalidated.
+- Regularly reset **local administrator passwords** using LAPS.
+
+### 3. Service & Application Security
+- Audit all services for **unquoted service paths** (Event ID 7045) and ensure binaries are properly quoted.
+- Restrict write permissions on `C:\` and `Program Files\` to prevent path hijacking.
+- Sign and verify executables to prevent execution of untrusted binaries.
+
+### 4. Logging & Monitoring
+- Ensure **Sysmon** is deployed with detailed configuration (Event IDs 1, 11, 4688, 4624, 4768).
+- Monitor:
+  - **DCSync attempts**: Event IDs 4662 (replication requests).
+  - **Pass-the-Hash**: 4624 with NTLM, LogonTypes 3/9/10.
+  - **Golden Ticket usage**: 4768/4769 anomalies, unusual lifetime tickets.
+  - **Delegation abuse**: S4U2self and S4U2proxy requests.
+- Use Splunk/ELK queries to correlate suspicious **CommandLine arguments** (`mimikatz`, `bloodhound`, `asktgt`, `kerberos::golden`).
+
+### 5. Network Segmentation & Lateral Movement Controls
+- Restrict **administrative sessions** to hardened jump servers (PAWs).
+- Limit SMB, WMI, and WinRM to specific administrative networks.
+- Monitor and restrict **service ticket requests** across domain trusts.
+
+### 6. Incident Response Preparedness
+- Regularly test **Golden Ticket** and **Pass-the-Hash** detection playbooks.
+- Train SOC staff to identify anomalies in **Kerberos traffic** vs. NTLM authentication.
+- Maintain and review **Splunk correlation rules** for credential dumping and privilege escalation.
+
+---
+
+✅ **In summary:**  
+The compromise highlights how misconfigurations in Active Directory and lack of monitoring enable attackers to pivot from a single endpoint compromise to total domain takeover. Proactive hardening, continuous monitoring, and enforcing least privilege are critical to preventing such breaches in the future.
+
 
 
