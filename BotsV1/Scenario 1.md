@@ -30,3 +30,44 @@ Now we have the IP we can drill into the data and try to present finding of vuln
 Common indicators of vulnerability scanning include:
 - Different source ports connecting to one server
 - Different user-agents from the one computer
+- Strange URI's and request methods
+
+Query: `index="botsv1" sourcetype="suricata" http.hostname="imreallynotbatman.com" src_ip=40.80.148.42 | table  src_ip http_user_agent, src_port, dest_port`
+
+Answer: 40.80.148.42
+
+## Question 3: Web Defacement: What company created the web vulnerability scanner used by Po1s0n1vy? Type the company name. (For example, "Microsoft" or "Oracle")
+Looking through the logs in suricata can again be fruitful to determine the vulnerability scanner being used. Sometimes the vulnerability scanner can trigger an alert when it identifies traffic indicative of an attack
+We can look through all of suricatas logs for any alerts logged for the imreallynotbatman.com host, and look for occurrences of the word scan.
+
+Query: `index="botsv1" sourcetype="suricata" "*imreallynotbatman.com*" alert.signature=*  "http.hostname"="imreallynotbatman.com" scan | table  alert.signature`
+<img width="1882" height="847" alt="image" src="https://github.com/user-attachments/assets/a470ad48-d646-453c-b109-5c3620f7ad8f" />
+
+This returns a few alert results related to scanning and the answer becomes clear
+
+Answer: acunetix
+
+## Question 4: Web Defacement: What IP address is likely attempting a brute force password attack against imreallynotbatman.com?
+
+When a brute force attack takes place on a website, the most common method of transmitting credentials to be authenticated so that a user can be authorised to do certain actions involves sending a POST request to the server through a form submission. We know that the form likely includes a prompt for password or that the phrase login would likely show up, conducting some research we know that the joomla login is handled by the "/joomla/administrator/index.php" path. With all of this knowledge we can count the number of requests made by each src_ip and determine the culrpit via spikes in traffic to this path
+
+Query:`index="botsv1" sourcetype="stream:http"  "*imreallynotbatman.com*" uri="/joomla/Administrator/index.php" dest_ip="192.168.250.70"
+| table src_ip, dest_ip, uri 
+| stats count by src_ip`
+
+Screnshot: <img width="1909" height="901" alt="image" src="https://github.com/user-attachments/assets/16f4fb55-c1eb-48e3-98fa-0a97a7d916d8" />
+
+Answer: 23.22.63.114
+
+## Question 5 Web Defacement: What was the first brute force password used?
+
+We know that in order for the attacker to attempt a password they must submit a form, we can access the form_data field and use it to identify records where this is present and then display the form data being saubmitted
+starting with the earliest record.
+
+Query: `index="botsv1" sourcetype="stream:http"  "*imreallynotbatman.com*" uri="/joomla/Administrator/index.php" form_data="*" src_ip="23.22.63.114" dest_ip="192.168.250.70"
+| table _time src_ip, dest_ip, uri, form_data
+| reverse`
+
+Answer: 12345678
+
+## Question 6: Web Defacement: What is the name of the executable uploaded by Po1s0n1vy? Please include the file extension. (For example, "notepad.exe" or "favicon.ico")
