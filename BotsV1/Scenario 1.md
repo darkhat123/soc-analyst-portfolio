@@ -71,3 +71,29 @@ Query: `index="botsv1" sourcetype="stream:http"  "*imreallynotbatman.com*" uri="
 Answer: 12345678
 
 ## Question 6: Web Defacement: What is the name of the executable uploaded by Po1s0n1vy? Please include the file extension. (For example, "notepad.exe" or "favicon.ico")
+
+We know the attacker uploaded a file to the web server, where exactly is unknown and what filename was provided is also unknown, we know that its an executable file so we can look for the portable executable extension
+.exe in the POST requests related to the target web server
+
+Query: `index="botsv1" sourcetype="stream:http"  "*imreallynotbatman.com*" "*.exe*" http_method=POST  | table  _time, src_ip, dest_ip, request, uri, part_filename{}, content_disposition{}`
+
+Screenshot: <img width="1914" height="919" alt="image" src="https://github.com/user-attachments/assets/ffc165c4-d2b0-4e4f-ba27-81e6d4804b98" />
+
+Answer: 3791.exe
+
+## Question 7: Web Defacement: What is the MD5 hash of the executable uploaded?
+We know that the executable will have been executed in the context of the user configured on the web server, we know the server is a windows server. We can use the Sysmon logs to try and identify any commandline arguments including the executable in question, we can obtain the images hash from the fields available.
+
+Query: `index="botsv1" sourcetype="xmlwineventlog" CommandLine="*3791.exe*" 
+|  table ParentImage, ParentCommandLine, Image, CommandLine, Hashes`
+
+Screenshot: <img width="1915" height="923" alt="image" src="https://github.com/user-attachments/assets/e028fc95-7209-4874-96d2-a56ae9ede3c2" />
+
+With access to the hash of the executable it is always recommended to conduct a file reputation check uysing the hash in virustotal.
+
+Screenshot: <img width="1913" height="923" alt="image" src="https://github.com/user-attachments/assets/81e8665b-7c2c-4eba-893d-0693e8898356" />
+
+Straight away we can identify this executable as a trojan, with further static and dynamic analysis techniques conducted in a controlled environment we can determine the behaviour and objective of this malware
+Answer: AAE3F5A29935E6ABCC2C2754D12A9AF0
+
+## Question 8: Web Defacement: What was the correct password for admin access to the content management system running "imreallynotbatman.com"?
