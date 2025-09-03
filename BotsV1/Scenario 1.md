@@ -97,3 +97,64 @@ Straight away we can identify this executable as a trojan, with further static a
 Answer: AAE3F5A29935E6ABCC2C2754D12A9AF0
 
 ## Question 8: Web Defacement: What was the correct password for admin access to the content management system running "imreallynotbatman.com"?
+
+When looking for password and usernames being submitted to the login page to determine if the attacker compromised an accountinvolves looking at the Form data and identifying the fields related to username and password submission, we can use a regx to look at the physical log data and extract occurences of the field and its likely contents, we can then count how many times these passwords were submitted, any more than once and its likely that entry is the true password, being used to login by the attacker.
+
+Query: `index="botsv1"  sourcetype="stream:http"  dest_ip="192.168.250.70" http_method="POST" uri="/joomla/Administrator/index.php" 
+| rex field=form_data "username=(?<username>[^&]+)"
+| rex field=form_data "passwd=(?<password>[^&]+)"
+| table username, password, http_user_agent
+| stats count by password, username
+| sort -count reverse`
+
+Screenshot: <img width="1910" height="899" alt="image" src="https://github.com/user-attachments/assets/9b1df0e7-10b7-4876-bf89-65a2a1efd4ad" />
+
+We can verify this is the successful password by checkign the user agent to see if different methods were used for bruteforcing and manual submission from a browser
+
+Query: `index="botsv1"  sourcetype="stream:http"  dest_ip="192.168.250.70" http_method="POST" uri="/joomla/Administrator/index.php" 
+| rex field=form_data "username=(?<username>[^&]+)"
+| rex field=form_data "passwd=(?<password>[^&]+)"
+| table username, password, http_user_agent
+| stats count AS attempts values(username) AS usernames values(password) AS passwords by http_user_agent
+| sort -attempts`
+
+Screenshot: <img width="1911" height="1029" alt="image" src="https://github.com/user-attachments/assets/98f7313d-22e5-45f7-8a97-5b23b864a89d" />
+
+Answer: batman
+
+## Question 9: Web Defacement: What is the name of the file that defaced the imreallynotbatman.com website? Please submit only the name of the file with the extension (For example, "notepad.exe" or "favicon.ico").
+We know that the attacker will have likely downloaded a file onto the website after getting access into the admin functionality of the CMS in order to use it for the defacement, we know that in order to download any files the attacker would need to make a get request to the intended resource, using this we can see any get requests made by the server and display the file requested and the suspected malicious site.
+
+Query: `index="botsv1" sourcetype="stream:http" src_ip="192.168.250.70" http_method="GET"
+| table _time uri site`
+
+Screenshot: <img width="1918" height="900" alt="image" src="https://github.com/user-attachments/assets/0da281c5-641a-452a-b58e-f3acf187414e" />
+
+### IOC's
+Domain: prankglassinebracket.jumpingcrab.com:1337
+File: /poisonivy-is-coming-for-you-batman.jpeg
+
+Answer: /poisonivy-is-coming-for-you-batman.jpeg
+## Question 10: Web Defacement: This attack used dynamic DNS to resolve to the malicious IP. What is the fully qualified domain name (FQDN) associated with this attack?
+
+This was as simple as displaying the site in the http logs to tell us the domain that the download request was sent to, but to make it more interesting and realistic we can use the knowledge of the attackers ip, and search for requests made with this address 
+
+Query: `index="botsv1" sourcetype="stream:dns" "23.22.63.114"  "host_addr{}"="23.22.63.114" | table  name{} src_ip`
+
+Screenshot: <img width="1905" height="884" alt="image" src="https://github.com/user-attachments/assets/29173222-d2a6-49b6-8575-bdef64913263" />
+
+Amswer: prankglassinebracket.jumpingcrab.com
+
+## Question 11: Web Defacement: What IP address has Po1s0n1vy tied to domains that are pre-staged to attack Wayne Enterprises?
+
+With knowledge of malicious domains and IP's used to host them, we can begin to check the reputation of both the IP's and more importantly the domains to see if any of the IP's point to domains related to poison ivy.
+
+We can use the Relations tab in Virustotal to check and see what other IP's have been used for certain domains, when we entered the inital IP we could see a domain po1s0n1vy.com which had been flagged as malicius.
+
+Drilling down we can see many IP's being used for this domain each with their own reputation
+
+Screenshot: <img width="1919" height="908" alt="image" src="https://github.com/user-attachments/assets/5865ab4b-e3e7-4ed4-bc82-ff4d1369aba9" />
+
+Answer: 23.22.63.114
+
+
