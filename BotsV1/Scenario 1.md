@@ -158,3 +158,45 @@ Screenshot: <img width="1919" height="908" alt="image" src="https://github.com/u
 Answer: 23.22.63.114
 
 
+## Question 12: Web Defacement: Based on the data gathered from this attack and common open-source intelligence sources for domain names, what is the email address most likely associated with the Po1s0n1vy APT group?
+
+ Earlier when we were identifying ip addresses linked to malicious domains we ideintified another domain po1s0n1vy.com which seems to be the domain created by the APT to perform malicious actions, if we go to this domain
+ in virustotal and look into the Details tab and in the google results section we can see intelligence websites providing whois information tied to the suspect domnain, if we investigate these then the email used to register the domain can be found
+
+Screenshot: <img width="1893" height="919" alt="image" src="https://github.com/user-attachments/assets/34d5a7b6-2209-4824-84d9-0bb2691bdac4" />
+
+ Answer: lillian.rose@po1s0n1vy.com
+
+ ## Question 13: Web Defacement: GCPD reported that common TTP (Tactics, Techniques, Procedures) for the Po1s0n1vy APT group, if initial compromise fails, is to send a spear-phishing email with custom malware attached to their intended target. This malware is usually connected to Po1s0n1vy's initial attack infrastructure. Using research techniques, provide the SHA256 hash of this malware.
+
+ We know that the malicious IP used to download the content for the defacement, this is likely an attacker controlled server and may have used other files to try and call home to this server with the malicious payload.
+ We can look in the relations tab in virustotal and see the communicating files, if we go through each one we can obtain their hashes in their details section, it is quickly identified.
+ 
+Screenshot: <img width="1907" height="911" alt="image" src="https://github.com/user-attachments/assets/81b32bd5-318c-485d-9007-88c4f48333d6" />
+
+ Answer: 9709473ab351387aab9e816eff3910b9f28a7a70202e250ed46dba8f820f34a8
+
+ ## Question 14: Web Defacement: What is the special hex code associated with the customized malware discussed in the previous question? (Hint: It's not in Splunk)
+ Typically hex codes are used to idenitfy a file as malicious and categorise it, these come in handy when creating detection rules in YARA or Sigma, they are typically shared by security researchers.
+
+ In our case if we look at the community tab in virustotal we get the hex code.
+ 
+ Screenshot: <img width="1917" height="918" alt="image" src="https://github.com/user-attachments/assets/7b73be53-9b98-41d2-ad1d-8ca7821f3bf0" />
+
+ Answer: 53 74 65 76 65 20 42 72 61 6e 74 27 73 20 42 65 61 72 64 20 69 73 20 61 20 70 6f 77 65 72 66 75 6c 20 74 68 69 6e 67 2e 20 46 69 6e 64 20 74 68 69 73 20 6d 65 73 73 61 67 65 20 61 6e 64 20 61 73 6b 20 68 69 6d 20 74 6f 20 62 75 79 20 79 6f 75 20 61 20 62 65 65 72 21 21 21
+
+ ## Question 15: Web Defacement: One of the passwords in the brute force attack is James Brodsky's favorite Coldplay song. Hint: we are looking for a six-character word on this one. Which is it?
+ Whilst there is no knowledge of what the password actually is we can use the eval statement to include only passwords within the specified password length and narrow down the search, we find it by scrolling through and linking to known coldplay songs
+ Query:`index="botsv1"  sourcetype="stream:http"  dest_ip="192.168.250.70" http_method="POST" uri="/joomla/Administrator/index.php" 
+| rex field=form_data "username=(?<username>[^&]+)"
+| rex field=form_data "passwd=(?<password>[^&]+)"| eval pw_length=len(password) 
+| where pw_length=6
+| table username, password, http_user_agent
+| stats count by password, username
+| sort -count reverse`
+
+Screenshot: <img width="1916" height="933" alt="image" src="https://github.com/user-attachments/assets/95e89260-f89e-47e3-80b2-b767489322d1" />
+
+
+## Question 16: 
+ Answer: yellow
