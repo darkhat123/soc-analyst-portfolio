@@ -48,3 +48,13 @@ Ethernet ports are the new normal providing much faster speeds and encapsulating
 We can research the built in COM port specifications online
 
 Answer: RS-232
+
+# Question 5: What is the destination IP address of the TCP reverse shell that was detected?
+
+Dragos provides many helpful dashboards for analysing the network from a general perspective, we have a section dedicated to **Threat Behaviour** which identifies any traffic that may pose a threat to the security posture. Alerts are categorised by their severity and if we go from highest to lowest we quickly identify a record with the category **SQL Server xp_cmdshell observed**.
+Screenshot: <img width="1851" height="911" alt="image" src="https://github.com/user-attachments/assets/0014dabe-6a1b-4d04-9b5e-d06789dde680" />
+
+This tells us an SQL Server(10.0.128) has made a connection to a C2 endpoint (10.0.0.31) using the xp_cmdshell functionality which allows the sql server to execute commands on the underlying operating system, this can be used to download malware or spawn rever shells to C2 endpoints or pivot to another host. 
+
+We can drill down into the records involved with this threat behaviour by filtering by category and we will get results displaying traffic related to xp_cmdshell.
+Screenshot: 
