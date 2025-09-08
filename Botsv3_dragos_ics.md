@@ -57,4 +57,47 @@ Screenshot: <img width="1851" height="911" alt="image" src="https://github.com/u
 This tells us an SQL Server(10.0.128) has made a connection to a C2 endpoint (10.0.0.31) using the xp_cmdshell functionality which allows the sql server to execute commands on the underlying operating system, this can be used to download malware or spawn rever shells to C2 endpoints or pivot to another host. 
 
 We can drill down into the records involved with this threat behaviour by filtering by category and we will get results displaying traffic related to xp_cmdshell.
-Screenshot: 
+
+Screenshot: <img width="1894" height="853" alt="dragos-xp_cmsdhell" src="https://github.com/user-attachments/assets/8e5d2559-4e8e-4aa6-9d53-b5d7bf94c174" />
+
+Now that we know the attacker was using 10.0.0.31 as a C2 endpoint to spawn a reverse shell we can see if there is any other traffic or alerts generated with these machines.
+
+Query: `index="dragos" dest_ip="10.0.0.131" src_ip="10.0.0.128" | table category, body`
+
+Screenshot: <img width="1911" height="849" alt="image" src="https://github.com/user-attachments/assets/4b58bcfa-1d08-4540-b593-6ec97428af2c" />
+
+**Further investigation**
+Now that we have the alert we would begin to gather context about the attack using network and EDR logs to identify:
+- Command ran to initiate reverse shell
+- Further commands ran on the system
+- user context ( What privileges were available)
+- Further connection attempts made by 10.0.0.128 to internal or external resources
+- Event IDs 4624 (logon), 4688 (process creation), 5140 (file access)
+Answer: 10.0.0.131
+
+# Question 6: What was the hostname that was connected to with a SMB command shell?
+Using dragos's category feature to look for any alerts produced involving the SMB protocolwe can quickly create a timeline of the smb activity detected by dragos and determine how it was abused and what systems were affected.
+
+Query:`index="dragos" category="*SMB*" | table _time src_ip, src_name, dest_ip, dest_name, category, body | reverse`
+
+Screenshot: <img width="1903" height="846" alt="image" src="https://github.com/user-attachments/assets/bf52793b-cba1-4ad6-b4f4-f1a56a79e96f" />
+
+We can see that their are multiple entries regarding smb traffic, we can see that command shell comes up quite often, we can drill down to find this
+
+Query: `index="dragos" category="SMB Command Shell Activity"  | table  _time src_ip, src_name, dest_ip, dest_name, dest_host category, body  | reverse`
+
+Screenshot: <img width="1884" height="659" alt="image" src="https://github.com/user-attachments/assets/9fb6aa11-183b-4e8e-8506-b50d4d0a5af6" />
+
+Answer: rslogix5000
+
+## Question 7: If you were going to use the tool 'pylogix', what config file parameter needs to change in order to set the slot number?
+PyLogix is a Python library used to communicate with Allen-Bradley (Rockwell Automation) PLCs over the Ethernet/IP protocol. It’s commonly used in Industrial Control System (ICS) environments for monitoring and interacting with PLCs programmatically.
+
+We can find guidance on the pylogix tool on github: https://github.com/dmroeder/pylogix
+
+Answer: comm.ProcessorSlot
+
+## Question 8: 
+
+
+
