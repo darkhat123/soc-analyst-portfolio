@@ -28,7 +28,7 @@ Answer: 192.168.97.6
 
 # Question 2: Based on the previous question, who is the manufacturer of the card?
 
-Answer: Rockwell Automation
+Answer: allen-bradley
 
 # Question 3: Based on the answer in question 102, answering in MB, how large is the user memory on the previously identified controller?
 Knowing technical specifications of hardware can help with system designs and requirements. This can include software and hardware specs.
@@ -199,7 +199,7 @@ Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/
 
 Answer: 10.0.0.131
 
-## Question 19: 
+## Question 19: What is the IPv4 address of the host that uses pycomm3 the most?
 
 We can first determine the most occurences of pycomm alerts for each src_ip to detemrine which ip was used the most
 
@@ -217,3 +217,120 @@ Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/
 Answer: 192.168.212.229
 
 ## Question 20: 
+
+## Question 21: What type of data can be used with the ‘request_data’ command?
+Given that pycomm is an open source tool we can use their github to determine key characteristics of its methods using the class responsible for defining the request_data method, this is where the programmer
+will define the data types that the request method can interact with.
+
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/f76391cf-653d-4cf0-9bc5-f3e4a5fe2c87" />
+
+Answer: ANY
+
+
+## Question 22:  In alphabetical order, and separated by commas, i.e. a,b,c - What three drivers come installed with pycomm3?
+
+When reading the README.md for pycomm3 it is explicitly stated that three drivers are avialable
+"
+pycomm3 includes 3 drivers:
+
+CIPDriver
+This driver is the base driver for the library, it handles common CIP services used by the other drivers. Things like opening/closing a connection, register/unregister sessions, forward open/close services, device discovery, and generic messaging. It can be used to connect to any Ethernet/IP device, like: drives, switches, meters, and other non-PLC devices.
+LogixDriver
+This driver supports services specific to ControlLogix, CompactLogix, and Micro800 PLCs. Services like reading/writing tags, uploading the tag list, and getting/setting the PLC time.
+SLCDriver
+This driver supports basic reading/writing data files in a SLC500 or MicroLogix PLCs. It is a port of the SlcDriver from pycomm with minimal changes to make the API similar to the other drivers. Currently this driver is considered legacy and it's development will be on a limited basis."
+
+Answer: CIPDriver,LogixDriver,SLCDriver
+
+## Question 23: What type of PLCs can be used with Pycomm3
+
+We already know from the github README.md that pycomm3 is made for allen-bradley PLC's which are manufactured by rockwell automation
+
+Answer: allen-bradley,rockwell automation
+
+
+## Question 24: What is the IP address of the Honeywell DSA Primary?
+
+Query `index=* category="*Honeywell DSA*" | table  _time, dvc, dvc_ip, dvc_host, category,body`
+
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/177eafdd-b186-4ee4-9694-6ce6f573060f" />
+
+This returns two entries which seems to be related to NAT translation of the internal ip address to a public ip address, we are concerned with the internal ip address
+Answer: 10.1.0.101
+
+## Question 25: What popular shell was used to execute commands on remote hosts from the MSSQL server?
+We already discovered this when looking at the database traffic
+Answer: xp_cmdshell
+
+## Question 26: By default that command is disabled. What command is used to enable it?
+
+Obviously xp_cmshell is disabled by default due to its prolific abuse by attackers to perform lateral movement, execute commands or escalate privileges and obtain reverse shells.
+
+It can be enabled using `EXEC sp_configure 'xp_cmdshell', 1;
+RECONFIGURE;`
+
+Answer: sp_configure
+
+## Question 27: Asset 21151 was potentially compromised. What was the first notification related to the asset after compromise was detected?
+
+Dragos can identify assets of interest and tag them to monitor their access across the network. We can search for any alerts related to this asset,
+
+Query: `index=* "*Asset 21151*"| table  _time, category,body 
+|  reverse`
+
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/78e42fa2-496e-46fa-9c21-e2a9c70d36ca" />
+
+Answer: PLC Date/Time Change
+
+## Question 28: One of the hosts on the network is used for running certain pieces of Siemens software and is named accordingly. It looks like one of the hosts was attempting to download a file multiple times. What is the IPv4 address of the destination it was trying to download the file from?
+
+Earlier in the investigation we identified some PLC's and scada components involved in the PLC status change traffic, we can see that from the naming convention that siemens01 is used to identify the first siemens PLC on the network, future iterations will increment the number.
+
+We can look for any traffic related to downloads for this PLC, we can see some are just the programs being downloaded to other PLC's to be ran and we cna also see a file being requested multyiple times
+
+Query: `index=* "*siemens*" "download"| table  _time, src_ip, src_host, dest_host, dest_ip, category,body | reverse`
+
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/67b63c0b-e92b-4289-b150-83f26359b4cf" />
+
+Answer: 192.168.192.74
+
+## Question 29: Referring to the previous question, what was the extension of the file that was downloaded?
+
+Answer: jar
+
+## Question 30: What is the source IP address that tried to negotiate RDP on port 55555?
+
+Query: `index=* "*55555*" "*rdp*"| table  _time, src_ip, src_host, dest_host, dest_ip, category,body | reverse`
+
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/4486b6ef-cd44-43e4-9ceb-418356b93cb7" />
+
+Answer: 192.168.208.1
+
+## Question 31: What is the common port number used for RDP?
+
+Answer: 3389
+
+## Question 32: During a forwarded RDP Negotiation request with a nonstandard destination port with a Dragos Source ID of 7834, what was the destination host name?
+This involves searching for traffic with the dragos source id and filtering for rdp traffic
+Query `index=* src_dragos_id=7834 *RDP*| table  _time, src_ip, src_host, dest_host, dest_ip, category,body   | reverse`
+
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/f60a8bf8-9215-41c3-8205-8f81fd5de6f1" />
+
+Answer: rhistorian
+
+## Question 33: What is the Dragos ID number of the rshistorian host?
+
+Focusing on the traffic genereated from the dragos source id we can identify the exact record for connecting to the rhistorian
+
+Query: `index=* src_dragos_id=7834 category="Forwarded RDP Negotiation Request - nonstandard dst port" | table  _time, src_ip, src_host, dest_host, dest_ip, category,body, dest_dragos_id   | reverse`
+
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/6f4d37db-5d4f-42b5-bce2-c04b07325de8" />
+
+
+## Question 34: Which test asset IP address was scanned by NMAP from the source IP of 192.168.208.1?
+
+Query: `index=* src_ip="192.168.208.1" "*scan*" | table  _time, src_ip, src_host, dest_host, dest_ip, category,body, dest_dragos_id   | reverse`
+
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/f8760caf-b74c-421e-9d42-e614e32120cb" />
+
+Answer: 192.168.192.74
