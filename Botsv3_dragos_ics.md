@@ -1,6 +1,28 @@
 # Scenario
 
 
+# MITRE ATT&CK MAPPING
+| Question / Activity                         | Observed Behavior                                   | MITRE ATT\&CK Technique                                                                                                            | Tactic                            |
+| ------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| PLC status change notifications             | PLC 1756-L61/B notifying hosts (192.168.97.6, etc.) | **T0817 – Modify Control Logic**                                                                                                   | **Impact** / Reconnaissance       |
+| Use of Allen-Bradley PLCs                   | Reading/writing tags                                | **T0814 – ICS Device Discovery**                                                                                                   | Reconnaissance                    |
+| Reverse shell via SQL Server (xp\_cmdshell) | SQL server executes commands to C2                  | **T1059.001 – Command and Scripting Interpreter: PowerShell** / **T1505.003 – Server Software Component: SQL Server xp\_cmdshell** | Execution                         |
+| SMB command shell activity                  | Remote command execution via SMB                    | **T1021.002 – Remote Services: SMB/Windows Admin Shares**                                                                          | Lateral Movement                  |
+| Pylogix communications                      | PLC tag reading via routing                         | **T0810 – Remote Device Control**                                                                                                  | Collection / ICS Control          |
+| Metasploit module `windows/speak_pwned`     | Remote code execution on Windows host               | **T1059.001 – Command and Scripting Interpreter: PowerShell**                                                                      | Execution                         |
+| Empire PowerShell usage                     | Malicious PowerShell commands                       | **T1059.001 – Command and Scripting Interpreter: PowerShell**                                                                      | Execution                         |
+| MS17-010 / EternalBlue                      | Exploitation of SMB vulnerability                   | **T1190 – Exploit Public-Facing Application**                                                                                      | Initial Access / Lateral Movement |
+| Unauthorized UserMemory modification on PLC | Multiple write attempts to PLC memory               | **T0817 – Modify Control Logic**                                                                                                   | Impact                            |
+| CIP Error / Unauthorized command            | Unauthorized command rejected by PLC                | **T0817 – Modify Control Logic**                                                                                                   | Impact / ICS Control              |
+| Port scanning activity                      | Source: factory-talk-vi, max port 1331              | **T1595 – Active Scanning**                                                                                                        | Reconnaissance                    |
+| File transfer via SMB                       | Host 192.168.193.12 → 192.168.2.2 using None Logon  | **T1021.002 – Remote Services: SMB/Windows Admin Shares**                                                                          | Lateral Movement / Collection     |
+| Metasploit reverse TCP shell                | Source 10.0.0.128 → dest 10.0.0.131                 | **T1059 – Command and Scripting Interpreter**                                                                                      | Execution / Lateral Movement      |
+| Pycomm3 tag reading/writing                 | Allen-Bradley PLC access                            | **T0810 – Remote Device Control**                                                                                                  | Collection / ICS Control          |
+| File download to Siemens host               | Destination 192.168.192.74, file extension: .jar    | **T1105 – Ingress Tool Transfer**                                                                                                  | Exfiltration / Execution          |
+| RDP negotiation / nonstandard port          | Source 192.168.208.1 → destination rhistorian       | **T1021.001 – Remote Services: RDP**                                                                                               | Lateral Movement                  |
+| NMAP scan from 192.168.208.1                | Target: 192.168.192.74                              | **T1595.001 – Active Scanning: Port Scanning**                                                                                     | Reconnaissance                    |
+
+
 # Question 1: Which host gets notified when the 1756-L61/B LOGIX5561 card undergoes a PLC status change?
 PLCs can have different states and in some cases, it may be considered normal for their state to change during normal operations. Being able to identify and detect state changes can inform of normal or malicious intent
 
