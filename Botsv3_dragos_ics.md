@@ -97,7 +97,123 @@ We can find guidance on the pylogix tool on github: https://github.com/dmroeder/
 
 Answer: comm.ProcessorSlot
 
-## Question 8: 
+## Question 8: Using pylogix, what value is used to read a tag by routing through another device?
 
+## Question 9: Using pylogix, what value is used to enumerate and get all controller and program tags?
 
+Answer: GetTagList()
 
+## Question 10: On which hostname was the Metasploit alert for detected windows/speak_pwned run against?
+
+This is a proof of concept used to demonstrate the ability for a remote system to induce a function on a windows pc saying its been pwned and is used for testing exercises. 
+
+We know that the category is likely to inlcude metasploit, and we know that the windows/speak_pwned module is used, we can filter for any traffic with this category and it quickly tells us that
+srv-hq-bkup01(192.168.193.12) was able to use metsasploit to access srv-hq-nas01(192.168.193.14).
+Query: `index=* sourcetype=dragos_alert  category ="*windows/speak_pwned*" 
+| table _time, src_host, src_ip, dest_host, dest_ip, category`
+
+Screnshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/7a255bd9-93d8-4f3b-b0a8-2e8c565cb046" />
+
+We could then pivot to other dragos logs including metasploit to gather information on the threat behaviour, then we can pivot to network and enpoint logs to determine whether the attacking ip made any further commands or exfiltrated any data.
+
+Query: `index=* sourcetype=dragos_alert  category ="*Metasploit*" 
+| table _time, src_host, src_ip, dest_host, dest_ip, category`
+
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/ca7f2715-186b-434b-bcef-8f4b9c75c8e7" />
+
+We can also look into the activtities related to the attacking ip to build a picture of their actions
+
+Query: `index=* sourcetype=dragos_alert  "192.168.193.12" 
+| table _time, src_host, src_ip, dest_host, dest_ip, category`
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/4a02bb99-f694-4c76-8fd6-a193cb1d1401" />
+
+We can see that the attacker first attempted to execute commands remotely on the rslogix5000 host, transferred a file to the host then moved on to the host in question and ran metasploit
+
+Answer: srv-hq-nas01
+
+## Question 11: What offensive PowerShell tool was used by the adversary?
+
+We know that this will produce some alert related to powershell, we can search for any categories involving powershell and look from the beginning to the end, we can see that initially one host executed powershell scripts using smb likely done by the attacker, next we see the 10.0.30.129 has attempted to send traffic to 10.0.30.131 using signatures common with empire c2 communications, whether the 10.0.30.129 executed empire using powershell or 10.0.30.131 has launched a malicious PHP listener.
+
+Query: `index=* category="*Powershell*" | table  _time, src_host, src_ip, src_name, dest_host, dest_ip, dest_name, body  | reverse`
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/70e42dc2-77d6-4350-83b0-4e3d30109060" />
+
+Answer: Empire
+
+## Question 12: MS17-101 was run against a target. What was the target's MAC address?
+
+Query: `index=* category="*EternalBlue*" | table  _time, src_host, src_ip, src_name, dest_host, dest_ip, dest_name, dest_mac, body  | reverse`
+
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/60962d26-a882-4751-84cf-1b7c999088a3" />
+
+Answer: F8:DB:88:3E:83:A0
+
+## Question 13: Which host attempted to modify the Usermemory object on the host 192.168.1.6 more than once?
+This involves looking for any occurences of the usermemory object in our alerts
+
+Query: `index=* dest_ip="192.168.1.6" "*Usermemory*"| table  _time, src_host, src_ip, src_name, dest_host, dest_ip, dest_name, dest_mac, body  | reverse`
+
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/1e555140-36f8-46c6-ae9e-ca3e4005d528" />
+
+This tells us 192.168.1.6 is a PLC, we could now look into any traffic related to that ip to see other actions taken
+
+Query: `index=* dest_ip="192.168.1.6" | table  _time, src_host, src_ip, src_name, dest_host, dest_ip, dest_name, dest_mac, body  | reverse`
+
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/fb2c86ed-f222-4023-ad9c-8a9b70e2e28d" />
+
+Answer: 192.168.1.100
+
+## Question 14: 
+This suggests that an alert was generated from 192.168.1.6 notifying 192.168.1.200 that the specified command was not authorised and therefore unsuccessful, the body of the alert gives us details as to what was rejected by the PLC.
+Query: `index=*  src_ip="192.168.1.6" dest_ip="*192.168.1.200*"  category="CIP Error (Service Not Supported) Indicating Unauthorized Command Message" | table  _time, src_host, src_ip, src_name, dest_host, dest_ip, dest_name, dest_mac, body   | reverse`
+
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/af7073ab-f052-4bc5-bb93-0ec3a49e2d7e" />
+
+Answer: Get Attribute List
+
+## Question 15: There was a port scan initiated at 03:06. Providing the port number only, what was the highest port number scanned?
+
+Query: `index=*  category="*scan*" | table  _time, src_host, src_ip, src_name, dest_host, dest_ip, dest_name, dest_mac, body   | reverse`
+
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/76221bc5-ebba-4b9d-a3de-f7745e4dc295" />
+
+Answer: 1331
+
+## Question 16: Based on the previous question, what is the hostname of where the scanner originated?
+
+Answer: factory-talk-vi
+
+## Question 17: Host 192.168.193.12 sent a file from 192.168.2.2. What was the access technique used? 
+
+Query: `index=*  category="*file*" src_ip = 192.168.193.12 dest_ip = 192.168.2.2 | table  _time, src_host, src_ip, src_name, dest_host, dest_ip, dest_name, dest_mac, body    | reverse`
+
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/efdfdbe1-2af5-41dc-92c1-32ddb90eeab4" />
+
+Answer: None Logon
+
+## Question 18: There was a Metasploit reverse TCP shell detected, started from 10.0.0.128. Provide the IPv4 address of where it was connecting to.
+
+Query: `index=*  category="*reverse*" src_ip = 10.0.0.128 | table  _time, src_host, src_ip, src_name, dest_host, dest_ip, dest_name, dest_mac, body    | reverse`
+
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/c1ffeec2-72b5-49be-8f85-dc27feebb492" />
+
+Answer: 10.0.0.131
+
+## Question 19: 
+
+We can first determine the most occurences of pycomm alerts for each src_ip to detemrine which ip was used the most
+
+Query: `index=*  category="*pycomm3*"  | table  _time, src_host, src_ip, src_name, dest_host, dest_ip, dest_name, dest_mac, body
+| stats count by src_ip`
+
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/81fe6fd1-fb47-41a5-be34-2c8e218c03f1" />
+
+Now we know what src_ips are associated with the traffic we can filter for these specifically
+
+Query: `index=*  category="*pycomm3*" src_ip = "192.168.212.229,192.168.212.226" | table  _time, src_host, src_ip, src_name, dest_host, dest_ip, dest_name, dest_mac, body`
+
+Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/067e5ebc-f4f1-4b5f-a8e9-c7dbe1343bca" />
+
+Answer: 192.168.212.229
+
+## Question 20: 
