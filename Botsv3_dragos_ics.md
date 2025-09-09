@@ -19,9 +19,8 @@
 | Metasploit reverse TCP shell                | Source 10.0.0.128 → dest 10.0.0.131                 | **T1059 – Command and Scripting Interpreter**                                                                                      | Execution / Lateral Movement      |
 | Pycomm3 tag reading/writing                 | Allen-Bradley PLC access                            | **T0810 – Remote Device Control**                                                                                                  | Collection / ICS Control          |
 | File download to Siemens host               | Destination 192.168.192.74, file extension: .jar    | **T1105 – Ingress Tool Transfer**                                                                                                  | Exfiltration / Execution          |
-| RDP negotiation / nonstandard port          | Source 192.168.208.1 → destination rhistorian       | **T1021.001 – Remote Services: RDP**                                                                                               | Lateral Movement                  |
+| **RDP negotiation / nonstandard port**      | Source 192.168.208.1 → destination rhistorian       | **T1021.001 – Remote Services: RDP**                                                                                               | Lateral Movement                  |
 | NMAP scan from 192.168.208.1                | Target: 192.168.192.74                              | **T1595.001 – Active Scanning: Port Scanning**                                                                                     | Reconnaissance                    |
-
 
 # Question 1: Which host gets notified when the 1756-L61/B LOGIX5561 card undergoes a PLC status change?
 PLCs can have different states and in some cases, it may be considered normal for their state to change during normal operations. Being able to identify and detect state changes can inform of normal or malicious intent
@@ -359,3 +358,28 @@ Query: `index=* src_ip="192.168.208.1" "*scan*" | table  _time, src_ip, src_host
 Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/f8760caf-b74c-421e-9d42-e614e32120cb" />
 
 Answer: 192.168.192.74
+
+This investigation provides a comprehensive overview of both ICS-specific and enterprise threat activity in the monitored environment.
+
+# Key Takeaways:
+- PLC / ICS Monitoring
+  - Status changes on the 1756-L61/B LOGIX5561 PLC were propagated to multiple hosts, primarily 192.168.97.6.
+  - Unauthorized or anomalous UserMemory writes and command rejections were observed, emphasizing the importance of monitoring PLC communications.
+- Malicious Activity Detection
+  - SQL Server abuse (xp_cmdshell), PowerShell Empire execution, Metasploit reverse shells, and EternalBlue exploitation were all detected.
+  - File transfers, downloads, and ingress tool transfers highlight potential data exfiltration and lateral movement risks.
+- RDP Observations
+  - A forwarded RDP negotiation request on a nonstandard port (55555) was observed from factory-talk-vi to rhistorian.This activity represents potential lateral movement or ICS management traffic and aligns with MITRE ATT&CK T1021.001.
+  - Monitoring of RDP traffic, especially on nonstandard ports, is critical for identifying stealthy access attempts.
+- Network Reconnaissance
+   -Port scans and network discovery by hosts like factory-talk-vi indicate potential adversary preparation for exploitation or mapping of the ICS environment.
+# Recommendations:
+- Enhance ICS monitoring for PLC state changes, UserMemory modifications, and command rejections.
+- Segment enterprise and ICS networks to reduce lateral movement opportunities.
+- Monitor RDP traffic, particularly on nonstandard ports, and restrict remote access to authorized hosts.
+- Leverage MITRE ATT&CK mapping to tune detection rules for ICS and enterprise threats.
+- Apply patches to vulnerable systems (e.g., MS17-010) and disable risky functionality like xp_cmdshell when not needed.
+
+# Closing Statement:
+By combining network and endpoint analysis with structured threat intelligence, including MITRE ATT&CK mapping, organizations can achieve a holistic view of ICS and enterprise security. This enables early detection of anomalous activity, effective incident response, and improved resilience against both ICS-specific and general cyber threats.
+
