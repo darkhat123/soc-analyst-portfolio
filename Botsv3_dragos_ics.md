@@ -73,6 +73,7 @@ Now that we have the alert we would begin to gather context about the attack usi
 - user context ( What privileges were available)
 - Further connection attempts made by 10.0.0.128 to internal or external resources
 - Event IDs 4624 (logon), 4688 (process creation), 5140 (file access)
+
 Answer: 10.0.0.131
 
 # Question 6: What was the hostname that was connected to with a SMB command shell?
@@ -216,7 +217,9 @@ Screenshot: <img width="1920" height="1080" alt="image" src="https://github.com/
 
 Answer: 192.168.212.229
 
-## Question 20: 
+## Question 20: What protocol does Pycomm3 to use to read and write tag values?
+
+Answer: EtherNet/IP
 
 ## Question 21: What type of data can be used with the ‘request_data’ command?
 Given that pycomm is an open source tool we can use their github to determine key characteristics of its methods using the class responsible for defining the request_data method, this is where the programmer
