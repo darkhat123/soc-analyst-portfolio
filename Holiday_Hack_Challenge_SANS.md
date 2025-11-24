@@ -55,4 +55,42 @@ Step 5: Identify the members of the misconfigured group
 
 Submission: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/e22f27f8-6a9c-471a-9194-c9c6ab16b658" />
 
-# Scenario 3: 
+# Scenario 3: Restoring the Fire alarm by regaining Admin privileges
+This scenario provied us a low privilege user shell which we can use to enumerate the system for possible privilege escalation entry points due to permisisons misconfigurations or the user being able to run sudo without providing a password, or world writable dirtectories.
+
+## Check for any sudoer rights over scripts 
+Typically administrators work by the principal of least privilege when assigning admn rights, much like the PIM model, the sudoers group can be used to grant granular access to resources or commands with administrative privileges, this prevent spawmning a persistent root shell where the access to resources is rarley constrained, however sudoers can be abused to allow an attacker to spawn a privileged shell
+sometimes without even being prompted for a password. Sudoers configured correctly and other mechanisms in place can allow easy administration flexibility between users. However when these settings are misconfigured in sequence an attacker can leverage this misconfiguration to acheive an elevated shell
+
+We will run some discovery commands on the machine to determine what access we have
+
+Command: `sudo -l`
+
+Output: `Matching Defaults entries for chiuser on 4668f4b40fac:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin, use_pty,
+    secure_path=/home/chiuser/bin\:/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin, env_keep+="API_ENDPOINT API_PORT RESOURCE_ID HHCUSERNAME", env_keep+=PATH
+User chiuser may run the following commands on 4668f4b40fac:
+    (root) NOPASSWD: /usr/local/bin/system_status.sh`
+
+From this we immediately see:
+
+- env_reset - used to reset the environment variables to strictly whats necessary and trusted before running the sudo command, this prevents any manipulation of PATH environment variables and other environment variables used to control the loading order of shared libraries and inject a malicious library that gives them access to system and malloc.
+
+- Two secure paths
+  - secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin, use_pty
+  - secure_path=/home/chiuser/bin\:/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+- env_keep for $PATH
+This together creates a strom, then env_reset would have prevented any of our privilege escalation possibilities via abuse of the PATH variable ordering, and the secure_path enforces a PATH that cant be changed, however the second configuration is what introduces the order vulnerability. The env-keep ensures this PATH is used by our user when running sudo, meaning if we create a script in our home
+  irectory we can run any command with effective sudo prviileges.
+
+We can look and see how the PATH variable will be applied for our user, we can see that our user home directory comes first in the PATH variable which means if a resource, with the same name as the one we attempt to access exists in our directory it will be run before the intended script
+Command: `echo $PATH | tr ':' '\n'`
+Output: `/home/chiuser/bin
+/usr/local/sbin
+/usr/local/bin
+/usr/sbin
+/usr/bin
+/sbin
+/bin`
+
+
