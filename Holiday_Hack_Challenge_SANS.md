@@ -102,4 +102,57 @@ sudo /etc/firealarm/restore_fire_alarm`
 Submission: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/43df665b-c008-45d0-a841-b0abe46bc98a" />
 
 
+# Scenario 5: Acces gift tracker system
+The intern wants to connect to the tracker system which used to run on port 8080, we need to see what ports are listening on the machine to determine where the tracker is.
 
+We can use the ss command to disoplay all listening tcp sockets on the computer
+Command: ss -tlnp
+
+We can then connect to the port in the output using:
+Telnet command: `telnet 0.0.0.0 12321`
+Curl command: `curl 0.0.0.0:12321`
+
+And success we can connect to the tracker system
+
+## Scenario 6: The HOA hosts a static webpage on azure storage, An admin accidentally uploaded an infrastructure config file that contains a long-lived SAS token. We must locate it and report back
+
+A shared access signature is a token that grants limited access to a single resource in azure storage, this allows the user to connect to the resource and perform read or write operations without giving
+them the account key that logs them in. These should be rotated frequently and never disclosed to anyone other than the intended recipient, with the config file being available to the public anyone can open
+developer tools and see that file, and thus the sas token that grants access to this resource, compromising the page, leadingto possible defacement or intelligence gathering.
+
+## List resource groups in azure
+Command: `az group list -o table`
+
+## Find storage accounts within a certain reqource group
+Command: `az storage account list --resource-group rg-the-neighborhood -o table`
+
+## List the properties of a storage account
+Command: `az storage blob service-properties show --account-name neighborhoodhoa --auth-mode login`
+
+If this returns enabled=true this means that all the contents of the $web folder are publicly accessible
+
+## View the storage containers of a given storage account
+Command: `az storage container list --account-name neighborhoodhoa --auth-mode login`
+
+We can see a $web container, the default container, we can also see an additional public container that must have been added by the hoa
+
+## List the contents of the storage containers
+Command: `az storage blob list \
+  --container-name '$web' \
+  --account-name neighborhoodhoa \
+  --auth-mode login \
+  --output table`
+
+  This will return a file with a non standard extension, lets have a look at this 
+
+## Print the files contents to stdout
+Command:`az storage blob download --account-name neighborhoodhoa --container-name '$web' --name iac/terraform.tfvars --auth-mode login --file /dev/stdout | less`
+
+We have found the SAS token
+
+Submission: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/f2cace23-aadc-4b7b-bf42-97208f04e09d" />
+
+## Scenario 7: Visual networking
+Easily completed
+
+## Scenario 8: 
