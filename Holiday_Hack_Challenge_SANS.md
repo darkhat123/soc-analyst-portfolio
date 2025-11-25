@@ -93,4 +93,13 @@ Output: `/home/chiuser/bin
 /sbin
 /bin`
 
+Okay so we need to create a file with a name identical to one of the commands thats run in the script, preferably this command is ran without arguments, and is stored in /bin or /usr/bin
+
+We can check where these commands are using the which utility we have a few options but for best results well use the first listed, df, we will create our own version in the bin folder within the home directory, the file will have the shebang line, then the intended file will be executed with root privileges
+File contents: `#!/bin/bash
+sudo /etc/firealarm/restore_fire_alarm`
+
+Submission: <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/43df665b-c008-45d0-a841-b0abe46bc98a" />
+
+
 
